@@ -1,0 +1,24 @@
+{
+  "name": "basic-routing-app",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "type": "module",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^4.15.0",
+    "bcryptjs": "^2.4.3",
+    "express": "^4.18.2",
+    "express-validator": "^7.0.1",
+    "http-errors": "^2.0.0",
+    "nodemon": "^2.0.22"
+  },
+  "description": "",
+  "devDependencies": {
+    "prisma": "^4.15.0"
+  }
+}
