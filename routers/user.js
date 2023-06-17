@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { body, param, query } from "express-validator";
 import createHttpError from "http-errors";
-import { validateResultMiddleware } from "./validateResultMiddleware.js";
+import { validateResultMiddleware } from "../validate/validateResultMiddleware.js";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { generateToken } from "../auth.js";
+
 // const bcrypt = require("bcryptjs");
 
 const prisma = new PrismaClient();
@@ -21,7 +23,7 @@ userRouter.post(
     const newUser = await prisma.user.create({
       data: {
         name,
-        password: hashedPassword,   
+        password: hashedPassword,
       },
     });
 
@@ -75,18 +77,46 @@ userRouter.get("", async (req, res) => {
 //   }
 // );
 
+userRouter.post(
+  "/auth",
+  [body("name").exists().isString(), body("password").exists().isString()],
+  validateResultMiddleware,
+  async (req, res, next) => {
+    try {
+      const { username, password } = req.body;
+
+      const user = await prisma.user.findFirstOrThrow({
+        where: {
+          username,
+        },
+      });
+
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        next(createHttpError.Unauthorized("invalid password"));
+      }
+      const generatedToken = generateToken(user.id, user.username);
+      res.status(200).json({
+        token: generatedToken,
+      });
+    } catch (error) {
+      next(createHttpError.InternalServerError(error));
+    }
+  }
+);
+
 // GET /tasks/:id endpoint
 userRouter.get("/:id", async (req, res) => {
   const userId = parseInt(req.params.id);
 
-  const user = await prisma.user.findFirst({
+  const user = await prisma.user.findUnique({
     where: {
       id: userId,
     },
+    include: {
+      tasks: true,
+    },
   });
-  if (!user) {
-    throw createHttpError.NotFound("User not found");
-  }
 
   res.json(user);
 });

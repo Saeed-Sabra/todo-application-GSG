@@ -1,36 +1,35 @@
 import { Router } from "express";
 import { body, param, query } from "express-validator";
 import createHttpError from "http-errors";
-import { validateResultMiddleware } from "./validateResultMiddleware.js";
+import { validateResultMiddleware } from "../validate/validateResultMiddleware.js";
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 const tasksRouter = Router();
 
-let tasks = [];
-let lastIndex = 0;
+//
 
 tasksRouter.post(
   "",
   [
     body("name").exists().isString(),
     body("priority").exists().isInt({ min: 1, max: 5 }),
-    body("userId").exists().isInt().toInt(),
   ],
   validateResultMiddleware,
   async (req, res) => {
-    const { name, priority, userId } = req.body;
-
+    const { name, priority } = req.body;
+    const user = req.user;
     // Create a new task object
     const newTask = {
       name,
       priority,
-      userId
+      userId: user.id,
     };
 
     const createdTask = await prisma.task.create({
       data: newTask,
     });
+
     res.status(201).json(createdTask);
   }
 );
